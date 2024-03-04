@@ -15,14 +15,14 @@
 
 
 # set defaults
-ZONE="us-east1-d"
-TYPE="v3-32"
+ZONE="us-central2-b"
+TYPE="v4-64"
 VM_IMAGE="tpu-ubuntu2204-base"
-PREEMPTIBLE=false
+PREEMPTIBLE=true
 AUTODELETE=true
 SETUP_SCRIPT="$SCRIPT_DIR/helpers/setup-tpu-vm.sh"
-SUBNETWORK="default"
-USE_ALPHA=false
+SUBNETWORK="default1"
+USE_ALPHA=true
 
 if [ -z "$GIT_BRANCH" ]; then
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
