@@ -1,4 +1,6 @@
+import functools
 import jax
+from jax.experimental import shard_map
 from jax.experimental import pallas as pl
 import jax.numpy as jnp
 
@@ -161,11 +163,24 @@ def linear_attention(
     key: NamedArray,
     value: NamedArray,
 ) -> NamedArray:
-    q = query.array
-    k = key.array
-    v = value.array
-    kv_carry = jnp.zeros_like(k)
-    k_carry = jnp.zeros_like(k)
-    y, _, _ = attn(q, k, v, kv_carry, k_carry)
-    named_y = hax.named(y, value.axes)
-    return named_y
+    @functools.partial(
+        shard_map.shard_map,
+        mesh=hax.partitioning._get_mesh(),
+        in_specs=(
+            hax.partitioning.pspec_for_axis(query.axes),
+            hax.partitioning.pspec_for_axis(key.axes),
+            hax.partitioning.pspec_for_axis(value.axes),
+        ),
+        out_specs=hax.partitioning.pspec_for_axis(value.axes),
+        check_rep=False,
+    )
+    def attn_sharded(query, key, value):
+        q = query.array
+        k = key.array
+        v = value.array
+        kv_carry = jnp.zeros_like(k)
+        k_carry = jnp.zeros_like(k)
+        y, _, _ = attn(q, k, v, kv_carry, k_carry)
+        return y
+    y = attn_sharded(query, key, value)
+    return hax.named(y, value.axes)
