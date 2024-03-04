@@ -7,7 +7,7 @@ if [ "$DEBUG" == "1" ]; then
   set -x
 fi
 
-REPO="https://github.com/stanford-crfm/levanter.git"
+REPO="https://github.com/G-Levine/levanter.git"
 BRANCH=main
 
 if [ "$GIT_BRANCH" != "" ]; then
