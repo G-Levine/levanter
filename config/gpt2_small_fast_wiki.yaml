@@ -3,7 +3,7 @@ data:
 model:
   type: gpt2
   hidden_dim: 768
-  num_heads: 12
+  num_heads: 6
   num_layers: 12
   seq_len: 1024
   gradient_checkpointing: true
