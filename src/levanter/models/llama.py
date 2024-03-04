@@ -279,7 +279,7 @@ class LlamaAttention(StateDictSerializationMixin, eqx.Module):
 
         q = q.flatten_axes(("kv_heads", "q_heads_per_group"), "heads")
         attn_output = linear_attention(q, k, v)
-        
+        attn_output = attn_output.rename({"kv_heads": "heads"})
         if self.config.upcast_attn:
             attn_output = attn_output.astype(x.dtype)
 
