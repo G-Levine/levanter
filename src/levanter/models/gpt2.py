@@ -27,6 +27,7 @@ from levanter.compat.torch_serialization import (
 )
 from levanter.logging import silence_transformer_nag
 from levanter.models.attention import AttentionMask, dot_product_attention
+from levanter.models.linear_attention import linear_attention
 from levanter.models.lm_model import LmConfig
 from levanter.utils.py_utils import cached_classproperty
 
@@ -174,27 +175,32 @@ class Gpt2Attention(StateDictSerializationMixin, eqx.Module):
         q, k, v = qkv_out.unbind("qkv")
 
         # Rename k and v's Pos as haliax doesn't support unnamed axes or duplicate axes
-        k = k.rename({"position": "key_position"})
-        v = v.rename({"position": "key_position"})
+        #k = k.rename({"position": "key_position"})
+        #v = v.rename({"position": "key_position"})
 
+        q = hnn.softmax(q, axis="head_size")
+        k = hnn.softmax(k, axis="head_size")
+        
         # mistral tweak: attention scores can overflow FP16, or just be too imprecise, so upcast to FP32
         if self.config.scale_attn_by_inverse_layer_idx:
             q = q / (layer_idx + 1.0)
 
-        attn_output = dot_product_attention(
-            "position",
-            "key_position",
-            "head_size",
-            q,
-            k,
-            v,
-            mask=mask,
-            inference=self.inference,
-            use_flash=self.config.use_flash_attention,
-            flash_block_size=self.config.flash_attention_block_size,
-            prng=k_drop,
-            attention_dtype=jnp.float32 if self.config.upcast_attn else None,
-        )
+        # attn_output = dot_product_attention(
+        #     "position",
+        #     "key_position",
+        #     "head_size",
+        #     q,
+        #     k,
+        #     v,
+        #     mask=mask,
+        #     inference=self.inference,
+        #     use_flash=self.config.use_flash_attention,
+        #     flash_block_size=self.config.flash_attention_block_size,
+        #     prng=k_drop,
+        #     attention_dtype=jnp.float32 if self.config.upcast_attn else None,
+        # )
+        attn_output = linear_attention(q, k, v)
+        
         attn_output = self.c_proj(attn_output, key=k_out)
 
         if self.config.upcast_attn:
