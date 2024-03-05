@@ -8,7 +8,7 @@ import haliax as hax
 from haliax import Axis, AxisSelection, AxisSelector, NamedArray
 
 TILE_DIM = 128
-EPS = 1e-6
+EPS = 1e-3
 INTERPRET = False
 DEBUG = False
 
